@@ -1,2 +1,3 @@
 # tc2
-treafik fronted c2 examples
+
+Example C2 stacks, fronted using Traefik
