@@ -1,0 +1,63 @@
+version: "3"
+services:
+  traefik:
+    image: "traefik:v2.3"
+    command:
+      - "--log.level=INFO"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web-secure.address=:443"
+      - "--entrypoints.web-secure.http.tls=true"
+      # ignore internal TLS issues
+      - --serversTransport.insecureSkipVerify=true
+      # ACME
+      # - "--certificatesresolvers.primary.acme.email=${ACME_EMAIL}"
+      # - "--certificatesresolvers.primary.acme.storage=acme.json"
+      # - "--certificatesresolvers.primary.acme.httpchallenge.entrypoint=web"
+    ports:
+      - 80:80
+      - 443:443
+    env_file: .env
+    labels: 
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.api.service=api@internal"
+      - "traefik.http.routers.api.entrypoints=web-secure"
+      # - "traefik.http.routers.api.tls.certresolver=primary"
+      - "traefik.http.middlewares.admin-whitelist.ipwhitelist.sourcerange=127.0.0.1/32"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      # - "./acme.json:/acme.json"
+
+  covenant:
+    build: Covenant/Covenant
+    env_file: .env
+    volumes:
+      - ./Covenant/Covenant/Data:/app/Data
+    restart: unless-stopped
+    labels: 
+      - "traefik.enable=true"
+      # admin ui (please, protect this)
+      - "traefik.http.routers.covenant-admin.rule=Host(`admin.${DOMAIN}`)"
+      - "traefik.http.routers.covenant-admin.service=covenant-admin"
+      - "traefik.http.routers.covenant-admin.entrypoints=web-secure" 
+      - "traefik.http.services.covenant-admin.loadbalancer.server.port=7443"
+      - "traefik.http.services.covenant-admin.loadbalancer.server.scheme=https"
+      # - "traefik.http.routers.covenant-admin.tls.certresolver=primary"
+      # isolate the admin interface by ip. can also add basicauth
+      # - "traefik.http.routers.covenant-admin.middlewares=admin-whitelist"
+      # http
+      - "traefik.http.routers.covenant-web.rule=Host(`static.${DOMAIN}`)"
+      - "traefik.http.routers.covenant-web.service=covenant-web"
+      - "traefik.http.routers.covenant-web.entrypoints=web" 
+      - "traefik.http.services.covenant-web.loadbalancer.server.port=80"
+      - "traefik.http.services.covenant-web.loadbalancer.server.scheme=http"
+      # https c2
+      - "traefik.http.routers.covenant-web-secure.rule=Host(`static.${DOMAIN}`)"
+      - "traefik.http.routers.covenant-web-secure.service=covenant-web-secure"
+      - "traefik.http.routers.covenant-web-secure.entrypoints=web-secure" 
+      - "traefik.http.services.covenant-web-secure.loadbalancer.server.port=443"
+      - "traefik.http.services.covenant-web-secure.loadbalancer.server.scheme=https"
+      # - "traefik.http.routers.covenant-web-secure.tls.certresolver=primary"

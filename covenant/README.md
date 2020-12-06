@@ -1,13 +1,13 @@
-# cobalt strike
+# covenant
 
-A cobaltstrike docker-compose setup, using Traefik to front the server's ports.
+A Covenant docker-compose setup, using Traefik to front the server's ports.
 
 ## running
 
-- Copy the `.env.example` file to `.env` and fill the values inside.
+- Run `setup.sh` to clone the Covenant directory correctly.
 - Run `docker-compose up`, or to run and detach, `docker-compose up -d`.
 
-Data will persist in the `data/` directory, so reboots should not be destructive.
+Data will persist in the `Covenant/Covenant/Data/` directory, so reboots should not be destructive.
 
 ## tls configuration
 
